@@ -41,6 +41,24 @@ int I2C_State = 0;                     // State variable
 unsigned char status = 0x01, dir = 0x01;
 unsigned char p = 0x80;
 
+unsigned char d = 0;
+typedef union {
+	unsigned char byte;
+	struct
+	{
+		unsigned char seg_a : 1;
+		unsigned char seg_b : 1;
+		unsigned char seg_c : 1;
+		unsigned char seg_d : 1;
+		unsigned char seg_e : 1;
+		unsigned char seg_f : 1;
+		unsigned char seg_g : 1;
+		unsigned char seg_h : 1;
+	};
+} digit_t;
+
+digit_t digits[4];
+
 int main(void)
 {
 
@@ -81,6 +99,11 @@ int main(void)
 //	TAR = 0;
 //	TA0CTL |= (TASSEL_1 | MC_1 | ID_0 | TACLR | TAIE); // SMCLK
 
+	digits[0].byte = 0x55;
+	digits[1].byte = 0xaa;
+	digits[2].byte = 0xcc;
+	digits[3].byte = 0x77;
+
 	eint();
 
 	for (;;)
@@ -117,4 +140,44 @@ ISR(TIMER0_A0,timer0_a3_isr)
 	TACCR0 = 0xff & ((0x01 & (status++)) ? p : ~p );
 	P1OUT ^= BIT0 | BIT6;
  	TACTL &= ~TAIFG;
+
+ 	TACTL &= ~TAIFG;
+//	TACCR0 = 0x80; ff & ((0x01 & (status++)) ? p : ~p );
+
+//	P1OUT ^= BIT0 | BIT6 | BIT1 | BIT2;
+
+// clear anodes:
+	P1OUT &= ~(BIT2 | BIT4 | BIT5);
+	P2OUT &= ~(BIT2);
+
+// clear cathodes:
+	P1OUT |= (BIT3 | BIT6 | BIT7);
+	P2OUT |= (BIT0 | BIT1 | BIT3 | BIT4 | BIT5);
+
+// set next digit
+
+	++d;
+	d &= 0b11;
+
+	switch (d) {
+	case 0b11:
+		P1OUT |= BIT2;
+		break;
+	case 0b10:
+		P1OUT |= BIT4;
+		break;
+	case 0b01:
+		P1OUT |= BIT5;
+		break;
+	case 0b00:
+		P2OUT |= BIT2;
+		break;
+	default:
+		break;
+	}
+// output appropriate digit on cathode
+
+	P1OUT &= ~(digits[d].seg_b?BIT3:0x0 | digits[d].seg_c?BIT6:0x0 | digits[d].seg_g?BIT7:0x0);
+	P2OUT &= ~(digits[d].seg_f?BIT0:0x0 | digits[d].seg_a?BIT1:0x0 | digits[d].seg_e?BIT3:0x0 | digits[d].seg_d?BIT4:0x0 | digits[d].seg_h?BIT5:0x0);
+
 };
