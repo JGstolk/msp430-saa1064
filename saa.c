@@ -59,6 +59,27 @@ typedef union {
 
 digit_t digits[4];
 
+#define SEGA 0x01
+#define SEGB 0x02
+#define SEGC 0x04
+#define SEGD 0x08
+#define SEGE 0x10
+#define SEGF 0x20
+#define SEGG 0x40
+#define SEGH 0x80
+
+#define SEG_ZERO (SEGA | SEGB | SEGC | SEGD | SEGE | SEGF)
+#define SEG_ONE (SEGA | SEGB)
+#define SEG_TWO (SEGA | SEGB | SEGH | SEGE | SEGD)
+#define SEG_THREE (SEGA | SEGB | SEGC | SEGD | SEGH)
+#define SEG_FOUR
+#define SEG_FIVE
+#define SEG_SIX
+#define SEG_SEVEN
+#define SEG_EIGHT
+#define SEG_NINE
+#define SEG_NULL
+
 int main(void)
 {
 
@@ -99,10 +120,10 @@ int main(void)
 //	TAR = 0;
 //	TA0CTL |= (TASSEL_1 | MC_1 | ID_0 | TACLR | TAIE); // SMCLK
 
-	digits[0].byte = 0x55;
-	digits[1].byte = 0xaa;
-	digits[2].byte = 0xcc;
-	digits[3].byte = 0x77;
+	digits[0].byte = SEG_NULL;
+	digits[1].byte = SEG_ONE;
+	digits[2].byte = SEG_TWO;
+	digits[3].byte = SEG_THREE;
 
 	eint();
 
