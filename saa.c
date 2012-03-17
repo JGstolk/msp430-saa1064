@@ -193,13 +193,10 @@ interrupt(TIMER0_A0_VECTOR) timer0_a3_isr(void)
 interrupt(USI_VECTOR) usi_i2c_txrx(void)
 {
 	if (USICTL1 & USISTTIFG)                  // Start entry?
-	{
-		P1OUT |= 0x01;                          // LED on: sequence start
 		I2C_State = 2;                          // Enter 1st state on start
-	}
 
 //	switch(__even_in_range(I2C_State,14))
-	switch(I2C_State)
+	switch(I2C_State) {
 	{
 	case 0:                               // Idle, should not get here
 		break;
@@ -220,7 +217,6 @@ interrupt(USI_VECTOR) usi_i2c_txrx(void)
 		if (USISRL == SLV_Addr)       // Address match?
 		{
 			USISRL = 0x00;              // Send Ack
-			P1OUT &= ~0x01;             // LED off
 			if (transmit == 0){ 
 				I2C_State = 6;}           // Go to next state: RX data
 			if (transmit == 1){  
@@ -229,7 +225,6 @@ interrupt(USI_VECTOR) usi_i2c_txrx(void)
 		else
 		{
 			USISRL = 0xFF;              // Send NAck
-			P1OUT |= 0x01;              // LED on: error
 			I2C_State = 8;              // next state: prep for next Start
 		}
 		USICNT |= 0x01;               // Bit counter = 1, send (N)Ack bit
@@ -279,27 +274,24 @@ interrupt(USI_VECTOR) usi_i2c_txrx(void)
 			// LPM0_EXIT;                  // Exit active for next transfer
 		}
 		else                          // Ack received
-		{
-			P1OUT &= ~0x01;             // LED off
 			TX_Data();                  // TX next byte
-		}
 		break;
 	}
 	USICTL1 &= ~USIIFG;                       // Clear pending flags
 }
 
 void Data_RX(void){
-  
-              USICTL0 &= ~USIOE;            // SDA = input
-              USICNT |=  0x08;              // Bit counter = 8, RX data
-              I2C_State = 8;                // next state: Test data and (N)Ack
+	digits[Bytecount - 2].byte = USISRL;
+	USICTL0 &= ~USIOE;            // SDA = input
+	USICNT |=  0x08;              // Bit counter = 8, RX data
+	I2C_State = 8;                // next state: Test data and (N)Ack
 }
 
 void TX_Data(void){
-              USICTL0 |= USIOE;             // SDA = output
-              USISRL = SLV_Data++;
-              USICNT |=  0x08;              // Bit counter = 8, TX data
-              I2C_State = 12;               // Go to next state: receive (N)Ack
+	USICTL0 |= USIOE;             // SDA = output
+	USISRL = SLV_Data++;
+	USICNT |=  0x08;              // Bit counter = 8, TX data
+	I2C_State = 12;               // Go to next state: receive (N)Ack
 }
 
 void Setup_USI_Slave(void){
