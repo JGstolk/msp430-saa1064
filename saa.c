@@ -89,9 +89,13 @@ unsigned char status = 0x01, dir = 0x01, p = 0x80, d = 0;
 
 void Setup_hardware(void);
 
-unsigned char MST_Data = 0;                          // Variable for received data
+unsigned char MST_Data_cnt = 0;                          // Variable for received data
 unsigned char SLV_Data = 0x55;
-unsigned char SLV_Addr = 0x70;                       // Address is 0x38<<1 for R/W
+
+// make sure it is even address:
+#define I2C_Addr 0x70
+// Address is 0x38<<1 for R/W
+
 unsigned int I2C_State, Bytecount, transmit = 0;     // State variables
 
 void Data_RX(void);
@@ -186,8 +190,6 @@ interrupt(USI_VECTOR) usi_i2c_txrx(void)
 
 //	switch(__even_in_range(I2C_State,14))
 	switch(I2C_State) {
-	case 0:                               // Idle, should not get here
-		break;
 
 	case 2: // RX Address
 		USICNT = (USICNT & 0xE0) + 0x08; // Bit counter = 8, RX address
@@ -196,22 +198,19 @@ interrupt(USI_VECTOR) usi_i2c_txrx(void)
 		break;
 
 	case 4: // Process Address and send (N)Ack
-		if (USISRL & 0x01){            // If master read...
-			SLV_Addr = 0x91;             // Save R/W bit
-			transmit = 1;}
-		else{transmit = 0;
-			SLV_Addr = 0x90;}
+
+		transmit = (USISRL & 0x01);            // If master read...
+
 		USICTL0 |= USIOE;             // SDA = output
-		if (USISRL == SLV_Addr)       // Address match?
+		if ( (USISRL & 0xFE) == I2C_Addr)       // Address match?
 		{
 			USISRL = 0x00;              // Send Ack
-			if (transmit == 0){ 
-				I2C_State = 6;}           // Go to next state: RX data
-			if (transmit == 1){  
-				I2C_State = 10;}          // Else go to next state: TX data
-		}
-		else
-		{
+			I2C_State = transmit ? 10 : 6;
+//			if (transmit == 0) 
+//				I2C_State = 6;           // Go to next state: RX data
+//			if (transmit == 1)  
+//				I2C_State = 10;          // Else go to next state: TX data
+		} else {
 			USISRL = 0xFF;              // Send NAck
 			I2C_State = 8;              // next state: prep for next Start
 		}
@@ -231,14 +230,13 @@ interrupt(USI_VECTOR) usi_i2c_txrx(void)
 			I2C_State = 6;              // Rcv another byte
 			Bytecount++;
 			USICNT |= 0x01;             // Bit counter = 1, send (N)Ack bit
-		}
-		else                          // Last Byte
-		{
+		} else {                          // Last Byte
 			USISRL = 0xFF;              // Send NAck
 			USICTL0 &= ~USIOE;            // SDA = input
-			SLV_Addr = 0x90;              // Reset slave address
+//			SLV_Addr = I2C_Addr;              // Reset slave address
 			I2C_State = 0;                // Reset state machine
-			Bytecount =0;                 // Reset counter for next TX/RX
+			Bytecount = 0;                // Reset counter for next TX/RX
+			MST_Data_cnt = 0;
 		}
 		break;
 
@@ -256,20 +254,22 @@ interrupt(USI_VECTOR) usi_i2c_txrx(void)
 		if (USISRL & 0x01)               // If Nack received...
 		{
 			USICTL0 &= ~USIOE;            // SDA = input
-			SLV_Addr = 0x90;              // Reset slave address
+//			SLV_Addr = I2C_Addr;              // Reset slave address
 			I2C_State = 0;                // Reset state machine
 			Bytecount = 0;
 			// LPM0_EXIT;                  // Exit active for next transfer
-		}
-		else                          // Ack received
+		} else                          // Ack received
 			TX_Data();                  // TX next byte
+		break;
+	default:
+	case 0:                               // Idle, should not get here
 		break;
 	}
 	USICTL1 &= ~USIIFG;                       // Clear pending flags
 }
 
 void Data_RX(void){
-	digits[Bytecount - 2].byte = USISRL;
+	digits[MST_Data_cnt++].byte = USISRL;
 	USICTL0 &= ~USIOE;            // SDA = input
 	USICNT |=  0x08;              // Bit counter = 8, RX data
 	I2C_State = 8;                // next state: Test data and (N)Ack
