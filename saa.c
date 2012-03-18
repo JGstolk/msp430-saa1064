@@ -11,14 +11,13 @@
 //            |                 |
 //            |                 |         -----------------
 //            |             P1.6|------->|SEG A            |
-//            |             P1.6|------->|SEG A            |
-//            |             P1.6|------->|SEG A            |
-//            |             P1.6|------->|SEG A            |
-//            |             P1.6|------->|SEG A            |
-//            |             P1.6|------->|SEG A            |
-//            |             P1.6|------->|SEG A            |
-//            |             P1.6|------->|SEG A            |
-//            |             P1.6|------->|SEG A            |
+//            |             P1.6|------->|SEG B            |
+//            |             P1.6|------->|SEG C            |
+//            |             P1.6|------->|SEG D            |
+//            |             P1.6|------->|SEG E            |
+//            |             P1.6|------->|SEG F            |
+//            |             P1.6|------->|SEG G            |
+//            |             P1.6|------->|SEG H            |
 //             -----------------          -----------------
 //
 //******************************************************************************
@@ -27,18 +26,11 @@
 //#define __MSP430G2231__ 1
 #include <msp430.h>
 
-//#include <msp430g2231.h>
-//#include <msp430g2452.h>
-
 //depreciated: #include <signal.h>
 #include <legacymsp430.h>
 
 #include <isr_compat.h>
 
-unsigned char status = 0x01, dir = 0x01;
-unsigned char p = 0x80;
-
-unsigned char d = 0;
 typedef union {
 	unsigned char byte;
 	struct
@@ -54,8 +46,6 @@ typedef union {
 	};
 } digit_t;
 
-digit_t digits[4];
-
 #define SEGA 0b00000001
 #define SEGB 0b00000010
 #define SEGC 0b00000100
@@ -65,6 +55,7 @@ digit_t digits[4];
 #define SEGG 0b01000000
 #define SEGH 0b10000000
 
+#define SEG_BLANK (0x00)
 #define SEG_ZERO (SEGA | SEGB | SEGC | SEGD | SEGE | SEGF)
 #define SEG_ONE (SEGB | SEGC)
 #define SEG_TWO (SEGA | SEGB | SEGG | SEGE | SEGD)
@@ -83,14 +74,18 @@ digit_t digits[4];
 #define SEG_EE (SEGA | SEGD | SEGG | SEGE | SEGF)
 #define SEG_FF (SEGA | SEGE | SEGF | SEGG)
 
+digit_t digits[4];
+
+unsigned char status = 0x01, dir = 0x01, p = 0x80, d = 0;
+
 #define Number_of_Bytes  4                  // **** How many bytes?? ****
 
-void Setup_USI_Slave(void);
+void Setup_hardware(void);
 
-char MST_Data = 0;                          // Variable for received data
-char SLV_Data = 0x55;
-char SLV_Addr = 0x90;                       // Address is 0x48<<1 for R/W
-int I2C_State, Bytecount, transmit = 0;     // State variables
+unsigned char MST_Data = 0;                          // Variable for received data
+unsigned char SLV_Data = 0x55;
+unsigned char SLV_Addr = 0x90;                       // Address is 0x48<<1 for R/W
+unsigned int I2C_State, Bytecount, transmit = 0;     // State variables
 
 void Data_RX(void);
 void TX_Data(void);
@@ -106,29 +101,17 @@ int main(void)
 	BCSCTL1 = CALBC1_1MHZ;                    // Set DCO
 	DCOCTL = CALDCO_1MHZ;
 
-	Setup_USI_Slave();
+	Setup_hardware();
 
-	WDTCTL = WDTPW | WDTHOLD; /* Watchdog Timer Control = */
+//	digits[0].byte = SEG_ZERO;
+//	digits[1].byte = SEG_ONE;
+//	digits[2].byte = SEG_TWO;
+//	digits[3].byte = SEG_THREE;
 
-	P1DIR |= (BIT0 | BIT6);
-	P1OUT = BIT0;
-
-	TACTL |= MC_1;
-	TACTL |= TASSEL_1;
-	TACTL |= TAIE;
-
-	BCSCTL3 |= LFXT1S_2;
-
-	TACCTL0 = CCIE;
-
-	TACCR0 = 0x40; //0x0fff;  //SMCLK/TIME_1MS;
-
-	digits[0].byte = SEG_ZERO;
-	digits[1].byte = SEG_ONE;
-	digits[2].byte = SEG_TWO;
-	digits[3].byte = SEG_THREE;
-
-	eint();
+	digits[0].byte = SEG_BLANK;
+	digits[1].byte = SEG_BLANK;
+	digits[2].byte = SEG_BLANK;
+	digits[3].byte = SEG_BLANK;
 
 	for (;;)
 	{
@@ -189,7 +172,6 @@ interrupt(TIMER0_A0_VECTOR) timer0_a3_isr(void)
 // Rx bytes from master: State 2->4->6->8 
 // Tx bytes to Master: State 2->4->10->12->14
 //******************************************************************************
-//ISR(USI,usi_i2c_isr)
 interrupt(USI_VECTOR) usi_i2c_txrx(void)
 {
 	if (USICTL1 & USISTTIFG)                  // Start entry?
@@ -197,7 +179,6 @@ interrupt(USI_VECTOR) usi_i2c_txrx(void)
 
 //	switch(__even_in_range(I2C_State,14))
 	switch(I2C_State) {
-	{
 	case 0:                               // Idle, should not get here
 		break;
 
@@ -294,7 +275,7 @@ void TX_Data(void){
 	I2C_State = 12;               // Go to next state: receive (N)Ack
 }
 
-void Setup_USI_Slave(void){
+void Setup_hardware(void){
 
 	P1DIR |= (              BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7);
 	P2DIR |= (BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7);
@@ -315,5 +296,16 @@ void Setup_USI_Slave(void){
 	USICTL1 &= ~USIIFG;                       // Clear pending flag
   
 	transmit = 0;
+
+	TACTL |= MC_1;
+	TACTL |= TASSEL_1;
+	TACTL |= TAIE;
+
+	BCSCTL3 |= LFXT1S_2;
+
+	TACCTL0 = CCIE;
+
+	TACCR0 = 0x40; //0x0fff;  //SMCLK/TIME_1MS;
+
 	_EINT();
 }
