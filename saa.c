@@ -10,14 +10,21 @@
 //            |                 |         -----------------
 //            |                 |
 //            |                 |         -----------------
-//            |             P1.6|------->|SEG A            |
-//            |             P1.6|------->|SEG B            |
-//            |             P1.6|------->|SEG C            |
-//            |             P1.6|------->|SEG D            |
-//            |             P1.6|------->|SEG E            |
-//            |             P1.6|------->|SEG F            |
-//            |             P1.6|------->|SEG G            |
-//            |             P1.6|------->|SEG H            |
+//            |                 |        |                 |
+//            |             P2.1|------->|SEG A            |
+//            |             P1.3|------->|SEG B            |
+//            |             P2.7|------->|SEG C            |
+//            |             P2.4|------->|SEG D            |
+//            |             P2.3|------->|SEG E            |
+//            |             P2.0|------->|SEG F            |
+//            |             P2.6|------->|SEG G            |
+//            |             P2.5|------->|SEG H            |
+//            |                 |        |                 |
+//            |             P2.2|------->|COM 0            |
+//            |             P1.5|------->|COM 1            |
+//            |             P1.4|------->|COM 2            |
+//            |             P1.2|------->|COM 3            |
+//            |                 |        |                 |
 //             -----------------          -----------------
 //
 //******************************************************************************
@@ -33,7 +40,7 @@
 
 typedef union {
 	unsigned char byte;
-	struct
+	struct 
 	{
 		unsigned char seg_a : 1;
 		unsigned char seg_b : 1;
@@ -84,7 +91,7 @@ void Setup_hardware(void);
 
 unsigned char MST_Data = 0;                          // Variable for received data
 unsigned char SLV_Data = 0x55;
-unsigned char SLV_Addr = 0x90;                       // Address is 0x48<<1 for R/W
+unsigned char SLV_Addr = 0x70;                       // Address is 0x38<<1 for R/W
 unsigned int I2C_State, Bytecount, transmit = 0;     // State variables
 
 void Data_RX(void);
@@ -137,17 +144,17 @@ interrupt(TIMER0_A0_VECTOR) timer0_a3_isr(void)
 	d &= 0b11;
 
 	switch (d) {
-	case 0b11:
-		P1OUT |= BIT2;
-		break;
-	case 0b10:
-		P1OUT |= BIT4;
+	case 0b00:
+		P2OUT |= BIT2;
 		break;
 	case 0b01:
 		P1OUT |= BIT5;
 		break;
-	case 0b00:
-		P2OUT |= BIT2;
+	case 0b10:
+		P1OUT |= BIT4;
+		break;
+	case 0b11:
+		P1OUT |= BIT2;
 		break;
 	default:
 		break;
