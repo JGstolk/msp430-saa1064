@@ -4,8 +4,8 @@
 //               MSP430G2253
 //             -----------------          -----------------
 //            |                 |        |                 |
-//            |         SDA/P1.7|------->|P1.7/SDA         |
-//            |         SCL/P1.6|<-------|P1.6/SCL         |
+//            |         SDA/P1.7|------->|SDA              |
+//            |         SCL/P1.6|<-------|SCL              |
 //            |                 |        |                 |
 //            |                 |         -----------------
 //            |                 |
@@ -90,6 +90,8 @@ unsigned char status = 0x01, dir = 0x01, p = 0x80, d = 0;
 void Setup_hardware(void);
 
 unsigned char MST_Data_cnt = 0;                          // Variable for received data
+digit_t* MST_Data = digits;
+
 unsigned char SLV_Data = 0x55;
 
 // make sure it is even address:
@@ -237,6 +239,7 @@ interrupt(USI_VECTOR) usi_i2c_txrx(void)
 			I2C_State = 0;                // Reset state machine
 			Bytecount = 0;                // Reset counter for next TX/RX
 			MST_Data_cnt = 0;
+			MST_Data = digits;
 		}
 		break;
 
@@ -269,7 +272,9 @@ interrupt(USI_VECTOR) usi_i2c_txrx(void)
 }
 
 void Data_RX(void){
-	digits[MST_Data_cnt++].byte = USISRL;
+//	digits[MST_Data_cnt++].byte = USISRL;
+	MST_Data->byte = USISRL;
+	MST_Data++;
 	USICTL0 &= ~USIOE;            // SDA = input
 	USICNT |=  0x08;              // Bit counter = 8, RX data
 	I2C_State = 8;                // next state: Test data and (N)Ack
