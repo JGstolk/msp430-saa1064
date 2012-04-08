@@ -8,22 +8,19 @@
 #include <isr_compat.h>
 
 #include "i2c_usi.h"
+#include "led.h"
 
 //unsigned char MST_Data[4] = { 0x00, 0x00, 0x00, 0x00 };
 unsigned char* MST_Data = 0;
-char* MST_Data_p = 0;                          // Variable for received data
 unsigned char SLV_Data = 0x55;
 
-// make sure it is even address:
-#define I2C_Addr 0x70
-// Address is 0x38<<1 for R/W
+unsigned int I2C_State, Bytecount;     // State variables
 
-unsigned int I2C_State, Bytecount, transmit = 0;     // State variables
+void Data_RX(char c){
 
-void Data_RX(void){
-//	MST_Data[MST_Data_cnt++] = USISRL;
-	*MST_Data_p = USISRL;
-	MST_Data_p++;
+//	MST_Data[Bytecount] = c;
+//	MST_Data[Bytecount] = Bytecount;
+
 	USICTL0 &= ~USIOE;            // SDA = input
 	USICNT |=  0x08;              // Bit counter = 8, RX data
 	I2C_State = 8;                // next state: Test data and (N)Ack
@@ -46,7 +43,6 @@ interrupt(USI_VECTOR) usi_i2c_txrx(void)
 	if (USICTL1 & USISTTIFG)                  // Start entry?
 		I2C_State = 2;                          // Enter 1st state on start
 
-//	switch(__even_in_range(I2C_State,14))
 	switch(I2C_State) {
 
 	case 2: // RX Address
@@ -57,45 +53,38 @@ interrupt(USI_VECTOR) usi_i2c_txrx(void)
 
 	case 4: // Process Address and send (N)Ack
 
-		transmit = (USISRL & 0x01);            // If master read...
-
-		USICTL0 |= USIOE;             // SDA = output
 		if ( (USISRL & 0xFE) == I2C_Addr)       // Address match?
 		{
+			USICTL0 |= USIOE;             // SDA = output
 			USISRL = 0x00;              // Send Ack
-			I2C_State = transmit ? 10 : 6;
-//			if (transmit == 0) 
-//				I2C_State = 6;           // Go to next state: RX data
-//			if (transmit == 1)  
-//				I2C_State = 10;          // Else go to next state: TX data
-		} else {
-			USISRL = 0xFF;              // Send NAck
-			I2C_State = 8;              // next state: prep for next Start
-		}
-		USICNT |= 0x01;               // Bit counter = 1, send (N)Ack bit
+			I2C_State = (USISRL & 0x01) ? 10 : 6;
+			USICNT |= 0x01;               // Bit counter = 1, send (N)Ack bit
+			Bytecount = 0;                // Reset counter for next TX/RX
+		} else
+			I2C_State = 2;              // next state: prep for next Start
 		break;
 
 	case 6: // Receive data byte
-		Data_RX();
-		break;  
+
+//		MST_Data[0] = SEG_SIX;
+
+		Data_RX(USISRL);
+		break;
 
 	case 8:// Check Data & TX (N)Ack
-		USICTL0 |= USIOE;             // SDA = output
-		if (Bytecount <= 2)
-			// If not last byte
-		{
+		if (Bytecount <= 4 ) { // expected number of bytes // If not last byte
+			MST_Data[Bytecount] = USISRL;
+			Bytecount++;
+			USICTL0 |= USIOE;             // SDA = output
 			USISRL = 0x00;              // Send Ack
 			I2C_State = 6;              // Rcv another byte
-			Bytecount++;
 			USICNT |= 0x01;             // Bit counter = 1, send (N)Ack bit
 		} else {                          // Last Byte
+			USICTL0 |= USIOE;             // SDA = output
 			USISRL = 0xFF;              // Send NAck
 			USICTL0 &= ~USIOE;            // SDA = input
-//			SLV_Addr = I2C_Addr;              // Reset slave address
 			I2C_State = 0;                // Reset state machine
 			Bytecount = 0;                // Reset counter for next TX/RX
-//			MST_Data_cnt = 0;
-			MST_Data_p = MST_Data;
 		}
 		break;
 
@@ -113,7 +102,6 @@ interrupt(USI_VECTOR) usi_i2c_txrx(void)
 		if (USISRL & 0x01)               // If Nack received...
 		{
 			USICTL0 &= ~USIOE;            // SDA = input
-//			SLV_Addr = I2C_Addr;              // Reset slave address
 			I2C_State = 0;                // Reset state machine
 			Bytecount = 0;
 			// LPM0_EXIT;                  // Exit active for next transfer
@@ -140,8 +128,5 @@ void Setup_I2C(unsigned char* buff){
 	USICTL0 &= ~USISWRST;                     // Enable USI
 	USICTL1 &= ~USIIFG;                       // Clear pending flag
   
-	transmit = 0;
-
 	MST_Data = buff;
-	MST_Data_p = buff;
 }

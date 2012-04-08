@@ -6,7 +6,7 @@
 
 CC=msp430-gcc
 CFLAGS=-Os -mmcu=msp430g2252
-CFLAGS_USCI=-Os -mmcu=msp430g2453
+CFLAGS_USCI=-Os -mmcu=msp430g2553
 LIBS=#-lm
 OBJECTS=saa.o TI_USCI_I2C_slave.o led.o saa_usi.o saa_usci.o
 

@@ -41,7 +41,7 @@
 #include "led.h"
 #include "i2c_usi.h"
 
-digit_t* display_buffer = 0;
+unsigned char* display_buffer = 0;
 
 int main(void)
 {
@@ -56,7 +56,7 @@ int main(void)
 	DCOCTL = CALDCO_1MHZ;
 
 	display_buffer = Setup_LED();
-	Setup_I2C((unsigned char*)display_buffer);
+	Setup_I2C(display_buffer);
 
 	Init_display();
 
