@@ -1,8 +1,8 @@
 #ifndef TI_USCI_I2C_SLAVE
 #define TI_USCI_I2C_SLAVE
 
-#define SDA_PIN 0x80                                  // msp430x261x UCB0SDA pin
-#define SCL_PIN 0x40                                  // msp430x261x UCB0SCL pin
+#define SDA_PIN 0x80                                  // msp430x261x UCB0SDA pin P1.7
+#define SCL_PIN 0x40                                  // msp430x261x UCB0SCL pin P1.6
 
 void TI_USCI_I2C_slaveinit(void (*SCallback)(unsigned char volatile *value),
                            void (*TCallback)(unsigned char volatile *value),
