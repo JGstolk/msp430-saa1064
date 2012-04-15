@@ -8,7 +8,7 @@ CC=msp430-gcc
 CFLAGS=-Os -mmcu=msp430g2252
 CFLAGS_USCI=-Os -mmcu=msp430g2553
 LIBS=#-lm
-OBJECTS=saa.o TI_USCI_I2C_slave.o led.o saa_usi.o saa_usci.o
+OBJECTS=saa.o TI_USCI_I2C_slave.o led.o saa_usi.o saa_usci.o adc.o
 
 saa: saa.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
@@ -19,10 +19,13 @@ TI_USCI_I2C_slave: TI_USCI_I2C_slave.o
 led: led.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
 
+adc: adc.o
+	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
+
 saa_usci: saa_usci.o TI_USCI_I2C_slave.o led.o
 	$(CC) $(CFLAGS_USCI) $^ $(LIBS) -o $@
 
-saa_usi: saa_usi.o i2c_usi.o led.o
+saa_usi: saa_usi.o i2c_usi.o led.o adc.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
 
 clean:
