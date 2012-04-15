@@ -39,9 +39,11 @@
 #include <isr_compat.h>
 
 #include "led.h"
+#include "adc.h"
 #include "i2c_usi.h"
 
-unsigned char* display_buffer = 0;
+unsigned char display_buffer[4] = { 0x00, 0x00, 0x00, 0x00 };
+unsigned char adc_buffer[2] = { 0x12, 0x34 };
 
 int main(void)
 {
@@ -55,8 +57,10 @@ int main(void)
 	BCSCTL1 = CALBC1_1MHZ;                    // Set DCO
 	DCOCTL = CALDCO_1MHZ;
 
-	display_buffer = Setup_LED();
-	Setup_I2C(display_buffer);
+	Setup_ADC((unsigned char*)&adc_buffer);
+	Setup_LED((unsigned char*)&display_buffer);
+
+	Setup_I2C((unsigned char*)&display_buffer, (unsigned char*)&adc_buffer);
 
 	Init_display();
 
