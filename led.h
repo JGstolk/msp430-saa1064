@@ -19,7 +19,7 @@
 #define SEG_FIVE (SEGA | SEGF | SEGG | SEGC | SEGD)
 #define SEG_SIX (SEGA | SEGF | SEGE | SEGC | SEGD | SEGG)
 #define SEG_SEVEN (SEGA | SEGB | SEGC)
-#define SEG_EIGHT (SEGA | SEGB | SEGC | SEGD | SEGE | SEGF)
+#define SEG_EIGHT (SEGA | SEGB | SEGC | SEGD | SEGE | SEGF | SEGG)
 #define SEG_NINE (SEGA | SEGB | SEGC | SEGD | SEGG | SEGF)
 
 #define SEG_AA (SEGA | SEGB | SEGC | SEGG | SEGE | SEGF)
@@ -44,7 +44,7 @@ typedef union {
 	};
 } digit_t;
 
-unsigned char* Setup_LED(void);
+void Setup_LED(unsigned char*);
 
 void Init_display(void);
 
