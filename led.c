@@ -9,7 +9,7 @@
 #include "led.h"
 
 //digit_t digits[4];
-unsigned char digits[4];
+unsigned char* digits = 0;
 
 unsigned char status = 0x01, dir = 0x01, p = 0x80, d = 0;
 
@@ -20,19 +20,23 @@ void Init_display(void) {
 //	digits[2].byte = SEG_TWO;
 //	digits[3].byte = SEG_THREE;
 
-	((digit_t*)(&digits[0]))->byte = ~SEG_BLANK;
-	((digit_t*)(&digits[1]))->byte = ~SEG_BLANK;
-	((digit_t*)(&digits[2]))->byte = ~SEG_BLANK;
-	((digit_t*)(&digits[3]))->byte = ~SEG_BLANK;
+//	((digit_t*)(&digits[0]))->byte = ~SEG_BLANK;
+//	((digit_t*)(&digits[1]))->byte = ~SEG_BLANK;
+//	((digit_t*)(&digits[2]))->byte = ~SEG_BLANK;
+//	((digit_t*)(&digits[3]))->byte = ~SEG_BLANK;
 
-//	digits[0].byte = SEG_BLANK;
-//	digits[1].byte = SEG_BLANK;
-//	digits[2].byte = SEG_BLANK;
-//	digits[3].byte = SEG_BLANK;
+	((digit_t*)(&digits[0]))->byte = SEG_BLANK;
+	((digit_t*)(&digits[1]))->byte = SEG_BLANK;
+	((digit_t*)(&digits[2]))->byte = SEG_BLANK;
+	((digit_t*)(&digits[3]))->byte = SEG_BLANK;
 
+//	((digit_t*)(&digits[0]))->byte = SEG_ZERO;
+//	((digit_t*)(&digits[1]))->byte = SEG_ONE;
+//	((digit_t*)(&digits[2]))->byte = SEG_TWO;
+//	((digit_t*)(&digits[3]))->byte = SEG_THREE;
 }
 
-unsigned char* Setup_LED(void){
+void Setup_LED(unsigned char* buffer){
 
 	P1DIR |= (BIT2 | BIT3 | BIT4 | BIT5);
 	P2SEL &= ~(BIT6 | BIT7); // changes the function of XIN/XOUT into GPIO
@@ -51,8 +55,8 @@ unsigned char* Setup_LED(void){
 
 	TACCR0 = 0x40; //0x0fff;  //SMCLK/TIME_1MS;
 
+	digits = (unsigned char*)buffer;
 //	return (unsigned char*)(&digits);
-	return &digits;
 }
 
 interrupt(TIMER0_A0_VECTOR) timer0_a3_isr(void)
