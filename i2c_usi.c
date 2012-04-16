@@ -14,7 +14,7 @@
 unsigned char* MST_Data = 0;
 unsigned char* SLV_Data = 0;
 
-unsigned int I2C_State, Bytecount, int_count, rx_count, start_count, stop_count;     // State variables
+unsigned int I2C_State, Bytecount, int_count, rx_count, start_count, restart_count, stop_count;     // State variables
 
 const unsigned char hex2seven_matrix[] = { SEG_ZERO,
 					   SEG_ONE,
@@ -44,15 +44,15 @@ interrupt(USI_VECTOR) usi_i2c_txrx(void)
 {
 	if (USICTL1 & USISTTIFG) {                 // Start entry?
 		I2C_State = 2;                          // Enter 1st state on start
-//		if (USICTL1 & USISTP)
-//			start_count = 0;
-//		++start_count;
+		if (!USICTL1 & USISTP)
+			++restart_count;
+		++start_count;
 	}
 
-//	if (USICTL1 & USISTP) {
-//		++stop_count;
-//		USICTL1 &= ~USISTP;
-//	}
+	if (USICTL1 & USISTP) {
+		++stop_count;
+		USICTL1 &= ~USISTP;
+	}
 
 //	USICTL1 &= ~USIIFG;                       // Clear pending flags
 
@@ -96,8 +96,8 @@ interrupt(USI_VECTOR) usi_i2c_txrx(void)
 
 	case 8:// Check Data & TX (N)Ack
 		if (Bytecount <= 4 ) { // expected number of bytes // If not last byte
-			if(Bytecount < 4)
-				MST_Data[0x3 & Bytecount] = USISRL;
+//			if(Bytecount < 4)
+//				MST_Data[0x3 & Bytecount] = USISRL;
 			Bytecount++;
 
 //			if(start_count == 1)
@@ -170,15 +170,18 @@ interrupt(USI_VECTOR) usi_i2c_txrx(void)
 	int_count++;
 
 //                                                           - / b / w / wp / saa /
-//	MST_Data[0] = hex2seven_matrix[int_count & 0xf]; //  5 / 7 / 9 / 11 /  13 /
+	MST_Data[0] = hex2seven_matrix[int_count & 0xf]; //  5 / 7 / 9 / 11 /  13 /
 
 //	MST_Data[1] = hex2seven_matrix[Bytecount & 0xf]; //  1 / 2 / 3 /  4 /   5 /
 
 //	MST_Data[2] = hex2seven_matrix[I2C_State & 0xf]; //  8 / 8 / 8 /  8 /   8 /
-//     MST_Data[2] = hex2seven_matrix[stop_count & 0xf]; //    /   /   /    /     /
 
 //	MST_Data[3] = hex2seven_matrix[ rx_count & 0xf]; //  1 / 2 / 3 /  4 /   5 /
-//    MST_Data[3] = hex2seven_matrix[start_count & 0xf]; //  1 / 1 / 1 /  1 /   1 /
+
+//                                                             -   /   b / w   /   wp / saa /   gb / gw
+	MST_Data[1] = hex2seven_matrix[start_count & 0xf]; //  1+1 / 1+1 / 1+1 /  1+1 / 1+1 /  1+1 /    /
+	MST_Data[2] = hex2seven_matrix[stop_count & 0xf];  //  0+1 / 0+1 / 0+1 /  0+1 / 0+1 /  0+1 /    /
+	MST_Data[3] = hex2seven_matrix[start_count & 0xf]; //  1+1 / 1+1 / 1+1 /  1+1 / 1+1 /  1+1 /    /
 }
 
 void Setup_I2C(unsigned char* led_buff, unsigned char* adc_buff){
