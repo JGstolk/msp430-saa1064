@@ -13,6 +13,7 @@
 //unsigned char MST_Data[4] = { 0x00, 0x00, 0x00, 0x00 };
 unsigned char* MST_Data = 0;
 unsigned char* SLV_Data = 0;
+unsigned char* CFG = 0;
 
 unsigned int I2C_State, Bytecount, cmd;     // State variables
 
@@ -118,7 +119,10 @@ interrupt(USI_VECTOR) usi_i2c_txrx(void)
 			Bytecount = cmd;
 
 		if (Bytecount <= 4 ) { // expected number of bytes // If not last byte
-			MST_Data[0x3 & (Bytecount - 1)] = USISRL;
+			if(Bytecount == 0)
+				(*CFG) = USISRL;
+			else
+				MST_Data[0x3 & (Bytecount - 1)] = USISRL;
 			Bytecount++;
 
 			I2C_State = I2C_RX_DATA;    // Rcv another byte
@@ -185,7 +189,7 @@ interrupt(USI_VECTOR) usi_i2c_txrx(void)
 //	MST_Data[2] = hex2seven_matrix[stop_count & 0xf]; //  0+1 / 0+1 / 0+1 /  0+1 / 0+1 /  0+1 /    /
 }
 
-void Setup_I2C(unsigned char* led_buff, unsigned char* adc_buff){
+	void Setup_I2C(unsigned char* led_buff, unsigned char* adc_buff, unsigned char* cfg){
 
 //	P1DIR |= (BIT6 | BIT7);
 //	P1OUT |= (BIT6 | BIT7);             // P1.6 & P1.7 Pullups / P1.3 segment C
@@ -236,4 +240,5 @@ void Setup_I2C(unsigned char* led_buff, unsigned char* adc_buff){
   
 	SLV_Data = (unsigned char*)adc_buff;
 	MST_Data = (unsigned char*)led_buff;
+	CFG = (unsigned char*)cfg;
 }
