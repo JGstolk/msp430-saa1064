@@ -42,8 +42,31 @@
 #include "adc.h"
 #include "i2c_usi.h"
 
+// C0 = 0 static mode, i.e. continuous display of digits 1 and 2
+// C0 = 1 dynamic mode, i.e. alternating display of digit 1 + 3 and 2 + 4
+#define DISLP_DYNAMIC 0x01
+
+//C1 = 0/1 digits 1 + 3 are blanked/not blanked
+#define DISPL_BLANK1 0x02
+
+//C2 = 0/1 digits 2 + 4 are blanked/not blanked
+#define DISPL_BLANK2 0x04
+
+//C3 = 1 all segment outputs are switched-on for segment test (1)
+#define DISPLAY_TEST 0x08
+
+//C4 = 1 adds 3 mA to segment output current
+#define DISPLAY_CURR_3M 0x10
+
+//C5 = 1 adds 6 mA to segment output current
+#define DISPLAY_CURR_6M 0x20
+
+//C6 = 1 adds 12 mA to segment output current
+#define DISPLAY_CURR_12M 0x40
+
 unsigned char display_buffer[4] = { 0x00, 0x00, 0x00, 0x00 };
 unsigned char adc_buffer[2] = { 0x12, 0x34 };
+unsigned char config = DISPLAY_CURR_3M + DISPLAY_CURR_6M + DISPLAY_CURR_12M;
 
 int main(void)
 {
@@ -58,9 +81,9 @@ int main(void)
 	DCOCTL = CALDCO_1MHZ;
 
 	Setup_ADC((unsigned char*)&adc_buffer);
-	Setup_LED((unsigned char*)&display_buffer);
+	Setup_LED((unsigned char*)&display_buffer, (unsigned char*)&config);
 
-	Setup_I2C((unsigned char*)&display_buffer, (unsigned char*)&adc_buffer);
+	Setup_I2C((unsigned char*)&display_buffer, (unsigned char*)&adc_buffer, (unsigned char*)&config);
 
 	Init_display();
 
