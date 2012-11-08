@@ -10,6 +10,7 @@
 
 //digit_t digits[4];
 unsigned char* digits = 0;
+unsigned char* config_p = 0;
 
 unsigned char status = 0x01, dir = 0x01, p = 0x80, d = 0;
 
@@ -36,7 +37,7 @@ void Init_display(void) {
 //	((digit_t*)(&digits[3]))->byte = SEG_THREE;
 }
 
-void Setup_LED(unsigned char* buffer){
+void Setup_LED(unsigned char* buffer, unsigned char* cfg){
 
 	P1DIR |= (BIT2 | BIT3 | BIT4 | BIT5);
 	P2SEL &= ~(BIT6 | BIT7); // changes the function of XIN/XOUT into GPIO
@@ -51,25 +52,35 @@ void Setup_LED(unsigned char* buffer){
 
 	BCSCTL3 |= LFXT1S_2;
 
+	TACCTL1 = CCIE;
 	TACCTL0 = CCIE;
 
+	TACCR1 = 0x20; //0x0fff;  //SMCLK/TIME_1MS;
 	TACCR0 = 0x40; //0x0fff;  //SMCLK/TIME_1MS;
 
 	digits = (unsigned char*)buffer;
+	config_p = (unsigned char*)cfg;
 //	return (unsigned char*)(&digits);
 }
 
-interrupt(TIMER0_A0_VECTOR) timer0_a3_isr(void)
+interrupt(TIMER0_A1_VECTOR) timer0_a1_isr(void)
 {
+	if(TACCTL1 && CCIFG) {
+		TACCTL1 &= ~CCIFG;
 // clear anodes:
-	P1OUT &= ~(BIT2 | BIT4 | BIT5);
-	P2OUT &= ~(BIT2);
+		P1OUT &= ~(BIT2 | BIT4 | BIT5);
+		P2OUT &= ~(BIT2);
 
 // clear cathodes:
-	P1OUT |= (BIT3);
-	P2OUT |= (BIT0 | BIT1 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7);
-
+		P1OUT |= (BIT3);
+		P2OUT |= (BIT0 | BIT1 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7);
+	}
+}
 // set next digit
+
+interrupt(TIMER0_A0_VECTOR) timer0_a0_isr(void)
+{
+	TACCR1 = ( (*config_p) & 0x70 ) >> 1;
 
 	++d;
 	d &= 0b11;
