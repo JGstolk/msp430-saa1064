@@ -45,10 +45,10 @@
 #include "led.h"
 
 unsigned char TXData[4] = { 0x00, 0x00, 0x00, 0x00 };
-  //unsigned char* TXData;
+//unsigned char* TXData;
 
-  //unsigned char RXData[4] = { 0x00, 0x00, 0x00, 0x00 };
-unsigned char* RXData;
+unsigned char RXData[4] = { 0x00, 0x00, 0x00, 0x00 };
+//unsigned char* RXData;
 
 unsigned char flag = 0x00;
 unsigned char flag1 = 0x00;
@@ -60,8 +60,8 @@ void receive_cb(unsigned char receive);
 void main(void)
 {
 	WDTCTL = WDTPW + WDTHOLD;                            // Stop WDT
-  
-	RXData = Setup_LED();
+
+	Setup_LED(RXData);
 
 	TI_USCI_I2C_slaveinit((void (*)(volatile unsigned char *))start_cb,
 			      (void (*)(volatile unsigned char *))transmit_cb,
