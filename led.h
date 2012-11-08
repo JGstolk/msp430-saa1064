@@ -44,7 +44,7 @@ typedef union {
 	};
 } digit_t;
 
-void Setup_LED(unsigned char*);
+void Setup_LED(unsigned char* buff, unsigned char* conf);
 
 void Init_display(void);
 
