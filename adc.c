@@ -14,13 +14,16 @@ unsigned char* adc = 0;
 * Reads ADC 'chan' once using an internal reference, 'ref' determines if the
 *   2.5V or 1.5V reference is used.
 **/
-void Single_Measure_REF(unsigned int chan, unsigned int ref)
+void Single_Measure_Temp()
 {
 	ADC10CTL0 &= ~ENC;							// Disable ADC
-	ADC10CTL0 = SREF_1 + ADC10SHT_3 + REFON + ADC10ON + ref + ADC10IE;	// Use reference,
+//	ADC10CTL0 = SREF0 + ADC10SHT_2 + ADC10ON + REFON + REF2_5V;
+//	ADC10CTL0 = SREF_1 + ADC10SHT_3 + REFON + ADC10ON + ref + ADC10IE;	// Use reference,
+//	ADC10CTL0 = SREF0 + ADC10SHT_2 + ADC10ON + REFON + REF2_5V + ADC10IE;	// Use reference,
+	ADC10CTL0 = SREF_1 + ADC10SHT_3 + ADC10ON + REFON + ADC10IE;	// Use reference,
 										//   16 clock ticks, internal reference on
 										//   ADC On, enable ADC interrupt, Internal  = 'ref'
-	ADC10CTL1 = ADC10SSEL_3 + chan;				// Set 'chan', SMCLK
+	ADC10CTL1 = ADC10SSEL_3 + INCH_10;				// Set 'chan', SMCLK
 	__delay_cycles (128);					// Delay to allow Ref to settle
 	ADC10CTL0 |= ENC + ADC10SC; 				// Enable and start conversion
 }
@@ -37,7 +40,8 @@ interrupt(ADC10_VECTOR) adc10_isr(void)
 	adc[0] = 0xff & ADC10MEM;	// Saves measured value.
 	adc[1] = 0xff & (ADC10MEM >> 8);
 
-	Single_Measure_REF(INCH_11, REF2_5V);
+//	Single_Measure_REF(INCH_11, REF2_5V);
+	Single_Measure_Temp();
 }
 
 void Setup_ADC(unsigned char* buffer){
@@ -55,12 +59,9 @@ void Setup_ADC(unsigned char* buffer){
 
 	BCSCTL3 |= LFXT1S_2;
 
-	TACCTL0 = CCIE;
-
-	TACCR0 = 0x40; //0x0fff;  //SMCLK/TIME_1MS;
-
 	adc = (unsigned char*)buffer;
 
-	Single_Measure_REF(INCH_11, REF2_5V);
+//	Single_Measure_REF(INCH_11, REF2_5V);
+	Single_Measure_Temp();
 }
 
