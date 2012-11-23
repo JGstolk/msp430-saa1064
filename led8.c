@@ -42,6 +42,7 @@ void Init_display(void) {
 //	digits[2].byte = SEG_TWO;
 //	digits[3].byte = SEG_THREE;
 
+#if 0
 	((digit_t*)(&digits[0]))->byte = ~SEG_BLANK;
 	((digit_t*)(&digits[1]))->byte = ~SEG_BLANK;
 	((digit_t*)(&digits[2]))->byte = ~SEG_BLANK;
@@ -50,6 +51,7 @@ void Init_display(void) {
 	((digit_t*)(&digits[5]))->byte = ~SEG_BLANK;
 	((digit_t*)(&digits[6]))->byte = ~SEG_BLANK;
 	((digit_t*)(&digits[7]))->byte = ~SEG_BLANK;
+#endif
 
 #if 1
 	((digit_t*)(&digits[0]))->byte = SEG_BLANK;
@@ -82,24 +84,24 @@ void Setup_LED(unsigned char* buffer) {
 	P1DIR |= (BIT3 | BIT6 | BIT7);
 	P2DIR |= (BIT0 | BIT1 | BIT3 | BIT4 | BIT5);
 
-	TACTL = MC_1 | TASSEL_2 | TAIE;
+	TA1CTL = MC_1 | TASSEL_2 | TAIE;
 
 	BCSCTL3 |= LFXT1S_2;
 
-	TACCTL1 = CCIE;
-	TACCTL0 = CCIE;
+	TA1CCTL1 = CCIE;
+	TA1CCTL0 = CCIE;
 
-//	TACCR1 = 0x20; //0x0fff;  //SMCLK/TIME_1MS;
-	TACCR0 = PERIOD; //0x0fff;  //SMCLK/TIME_1MS;
+//	TA1CCR1 = 0x20; //0x0fff;  //SMCLK/TIME_1MS;
+	TA1CCR0 = PERIOD; //0x0fff;  //SMCLK/TIME_1MS;
 
 	digits = (unsigned char*)buffer;
 }
 
-interrupt(TIMER0_A1_VECTOR) timer0_a1_isr(void)
+interrupt(TIMER1_A1_VECTOR) timer1_a1_isr(void)
 {
 
-	if(TACCTL1 && CCIFG) {
-		TACCTL1 &= ~CCIFG;
+	if(TA1CCTL1 && CCIFG) {
+		TA1CCTL1 &= ~CCIFG;
 
 // clear digit drivers:
 		P1DIR &= ~(BIT2 | BIT4 | BIT5);
@@ -123,13 +125,14 @@ interrupt(TIMER0_A1_VECTOR) timer0_a1_isr(void)
 	}
 }
 
-interrupt(TIMER0_A0_VECTOR) timer0_a0_isr(void)
+interrupt(TIMER1_A0_VECTOR) timer1_a0_isr(void)
 {
 // switch on the selected digit with digit driver
 	switch (d) {
 	case 0b000: // 2.2 0
 		P2OUT |= BIT2;
 		P2DIR |= BIT2;
+		TA1CCR1 = (PERIOD - 0x1800);
 		break;
 	case 0b001: // 1.5 1
 		P1OUT |= BIT5;
@@ -146,7 +149,7 @@ interrupt(TIMER0_A0_VECTOR) timer0_a0_isr(void)
 	case 0b100: // 2.2 4
 		P2OUT &= ~BIT2;
 		P2DIR |= BIT2;
-		TACCR1 = (PERIOD - 0x040);
+		TA1CCR1 = (PERIOD - 0x040);
 		break;
 	case 0b101: // 1.5 5
 		P1OUT &= ~BIT5;
@@ -159,7 +162,6 @@ interrupt(TIMER0_A0_VECTOR) timer0_a0_isr(void)
 	case 0b111: // 1.2 7
 		P1OUT &= ~BIT2;
 		P1DIR |= BIT2;
-		TACCR1 = (PERIOD - 0x140);
 		break;
 
 	default:
@@ -194,12 +196,13 @@ interrupt(TIMER0_A0_VECTOR) timer0_a0_isr(void)
 	++d;
 	d &= 0b111;
 
+#if 0
 //	++counter_c;
 //	counter_c &= 0x3;
 
 //	if(!counter_c) {
-		++counter_l;
-//		counter_l += 256;
+//		++counter_l;
+		counter_l += 256;
 
 		if(!counter_l) {
 			++counter_h;
@@ -235,7 +238,7 @@ interrupt(TIMER0_A0_VECTOR) timer0_a0_isr(void)
 			((digit_t*)(&digits[6]))->byte = SEG_BLANK;
 		((digit_t*)(&digits[7]))->byte = seven_seg[ counter_l & 0xf ];
 //	}
-
- 	TACTL &= ~TAIFG;
+#endif
+ 	TA1CTL &= ~TAIFG;
 
 };
