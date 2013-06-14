@@ -9,16 +9,16 @@
 //            |                 |
 //            |                 |         -----------------
 //            |                 |        |                 |
-//            |             P2.1|------->|SEG A            |
-//            |             P1.3|------->|SEG B            |
-//            |             P1.6|------->|SEG C            |
-//            |             P2.4|------->|SEG D            |
-//            |             P2.3|------->|SEG E            |
-//            |             P2.0|------->|SEG F            |
-//            |             P1.7|------->|SEG G            |
-//            |             P2.5|------->|SEG H            |
-//            |                 |        |                 |
-//            |             P2.2|------->|COM 0            |
+//            |             P2.1|------->|SEG A    --A--   |
+//            |             P1.3|------->|SEG B   |     |  |
+//            |             P1.6|------->|SEG C   F     B  |
+//            |             P2.4|------->|SEG D   |     |  |
+//            |             P2.3|------->|SEG E    --G--   |
+//            |             P2.0|------->|SEG F   |     |  |
+//            |             P1.7|------->|SEG G   E     C  |
+//            |             P2.5|------->|SEG H   |     |  |
+//            |                 |        |         --D--   |
+//            |             P2.2|------->|COM 0          H |
 //            |             P1.5|------->|COM 1            |
 //            |             P1.4|------->|COM 2            |
 //            |             P1.2|------->|COM 3            |
@@ -68,8 +68,8 @@
 #include "led8.h"
 
   //unsigned char display_buffer[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-unsigned char display_buffer[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-  //unsigned char display_buffer[8] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
+  //unsigned char display_buffer[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+unsigned char display_buffer[8] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
 
 static const unsigned char seven_seg[16] = {
 	SEG_ZERO,
@@ -271,7 +271,7 @@ int main(void)
                                                     //  last check of overflow and stopping TimerA 
                 freq |= TAR;                        // Merge TimerA count with overflow 
                 if(WDTCTL & WDTIS0) freq <<= 2;     // Multiply by 4 if using 250 ms gate
-                print_freq(freq);                   // Show on LCD
+//                print_freq(freq);                   // Show on LCD
                                                     //
                 set_gate(freq);                     // Adjust gate time if necessary
                                                     //
